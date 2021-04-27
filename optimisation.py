@@ -125,7 +125,7 @@ def Best_func(theta,a0,a1,b0,b1, limit):
     return B, maxi 
    
 def Best_point(B,accuracy):
-    W_max, state, alpha, beta, l1, l2, Nonlocal = CHSH.chsh2(vector_to_matrix(B), accuracy)
+    _, state, alpha, beta, _, _, Nonlocal = CHSH.chsh2(vector_to_matrix(B), accuracy)
     #W_max, state, alpha, beta, all_maximal_eigenvalues, l1, l2 = CHSH.chsh(vector_to_matrix(B), accuracy)
     #CHSH.plot_CHSH(accuracy, all_maximal_eigenvalues,0,"-","-")
     #print(W_max, l1, l2)
@@ -145,7 +145,7 @@ def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
         print(theta/np.pi, a0/np.pi,a1/np.pi,b0/np.pi,b1/np.pi)
         print(P)
 
-    B, maxi = Best_func(theta,a0,a1,b0,b1, limit)
+    B, _ = Best_func(theta,a0,a1,b0,b1, limit)
     P2,_ = Best_point(B,accuracy)
     norma = LA.norm(P2)
     if norma != 0:

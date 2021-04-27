@@ -77,7 +77,7 @@ def print_CHSH(W_max, V_max, alpha, beta, correlators, LHV, l1, l2):
 
 def animacjuj(title, all_maximal_eigenvalues,accuracy):
     def init():
-        ax.plot_surface(X,Y, all_maximal_eigenvalues, cmap=cm.coolwarm)
+        ax.plot_surface(X,Y, all_maximal_eigenvalues)
         return fig,
 
     def animate(i):
@@ -103,7 +103,7 @@ def plot_CHSH(accuracy, all_maximal_eigenvalues,save, name, title):
     ax.set_title(title)
     ax.set_ylabel('Beta')
     ax.set_zlabel('Lamda max')    
-    ax.plot_surface(X,Y, all_maximal_eigenvalues, cmap=cm.coolwarm)
+    ax.plot_surface(X,Y, all_maximal_eigenvalues)
     if save:
         plt.savefig(name+'.png')
     plt.show()
@@ -199,7 +199,7 @@ def chsh_fast(factor,accuracy):
             w,v = LA.eig(W)
             w = w.real
             v = v.real
-            w_new, v_new = max_eigenvalue(w,v)
+            w_new, _ = max_eigenvalue(w,v)
             if (i == 0 and j == 0) or (i == len(a)-1 and j == 0) or(i == 0 and j == len(b)-1) or(i == len(a)-1 and j == len(b)-1):
                 if w_new > LHV:
                     LHV = w_new
