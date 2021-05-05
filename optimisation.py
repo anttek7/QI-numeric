@@ -134,8 +134,8 @@ def Best_point(B,accuracy):
     P = matrix_to_vector(correlators)
     return P, Nonlocal
 
-def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
 
+def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
     P = find_P(theta,a0,a1,b0,b1)
     norma = LA.norm(P)
     if norma != 0:
@@ -144,7 +144,6 @@ def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
         Pn = P
         print(theta/np.pi, a0/np.pi,a1/np.pi,b0/np.pi,b1/np.pi)
         print(P)
-
     B, _ = Best_func(theta,a0,a1,b0,b1, limit)
     P2,_ = Best_point(B,accuracy)
     norma = LA.norm(P2)
@@ -155,9 +154,6 @@ def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
         print('Best point is zero')
     d = LA.norm(Pn-P2n)
     if d <= accuracy*5:
-#        print('B\n',B)
-#        print('P\n',P)
-        
         return 1
     else:
         return 0

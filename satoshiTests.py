@@ -52,30 +52,68 @@ def pointsWithTwoSolutions(N):
         b = np.random.rand()*2-1
         c = np.random.rand()*2-1
 
-        P = [a,a,b,b,c,c,c,c]
+        P = [a,a,b,-b,c,c,c,-c]
         isExtremal = St.satoshiTest(P)
         print(isExtremal)
 
-def generalDoubleTiltedRegion():
-    eps = 0.001
-    D = 101
+def generalDoubleTiltedRegion(D):
     A = np.linspace(0,4,D)
-    Fi = np.linspace(0,2*np.pi,D)
+    Phi = np.linspace(0,2*np.pi,D)
     Plane = np.zeros((D,D))
 
-    for i,fi in enumerate(Fi):
+    for i,phi in enumerate(Phi):
         print(f'{i+1}/{D}')
         for j,a in enumerate(A):
-            B = func_B(a,fi)
+            B = GDT.functional(a, phi)
             accuracy = 0.001
-            # P2,Q, W_max, alpha, beta, state = Best_point(B,accuracy)
-            isExtremal = St.satoshiTest(P)
-            Plane[i][j] = Q
+            P, Qn = Op.Best_point(B,accuracy)
+
+            Qs = St.satoshiTest(P)
+            if Qn:
+                if Qs:
+                    Plane[i][j] = 1
+                else:
+                    Plane[i][j] = 2
+            else:
+                if Qs:
+                    Plane[i][j] = 3
+                else:
+                    Plane[i][j] = 0
+
 
     plt.imshow(Plane.T, extent=[0, 2*np.pi, 4, 0])
     plt.show()
 
+def generalWolfRegion(D):
+    acc = 0.001
+    D = 101
+    T = np.linspace(0,1,D)
+    R = np.linspace(0,2,D)
+    Plane = np.zeros((D,D))
+    Plane2 = np.zeros((D,D))
+
+    for i,t in enumerate(T):
+        print(f'{i+1}/{D}')
+        for j,r in enumerate(R):
+            B = GW.functional(t,r)
+            P = GW.quantumPoint(t,r)
+            # print(P)
+            Qs = St.satoshiTest(P)
+            P2,Qn= Op.Best_point(B,acc)
+            Plane[i][j] = Qs
+            Plane2[i][j] = Qn
+
+    plt.imshow(Plane.T, extent=[0, 2*np.pi, 4, 0])
+    plt.show()
+    plt.imshow(Plane2.T, extent=[0, 2*np.pi, 4, 0])
+    plt.show()
+
+
 N = 1000
+D = 101
 # compareSatoshiAndNumeric(N)
 # pointsWithTwoSolutions(N)
-generalDoubleTiltedRegion()
+# generalDoubleTiltedRegion(D)
+generalWolfRegion(D)
+# GW.testWolfBQ()
+# GW.testWolfPoint()
