@@ -52,13 +52,13 @@ def pointsWithTwoSolutions(N):
         b = np.random.rand()*2-1
         c = np.random.rand()*2-1
 
-        P = [a,a,b,-b,c,c,c,-c]
+        P = [a,a,b,b,c,c,c,c]
         isExtremal = St.satoshiTest(P)
         print(isExtremal)
 
 def generalDoubleTiltedRegion(D):
-    A = np.linspace(0,4,D)
-    Phi = np.linspace(0,2*np.pi,D)
+    A = np.linspace(0,2,D)
+    Phi = np.linspace(0,np.pi/2,D)
     Plane = np.zeros((D,D))
 
     for i,phi in enumerate(Phi):
@@ -81,13 +81,14 @@ def generalDoubleTiltedRegion(D):
                     Plane[i][j] = 0
 
 
-    plt.imshow(Plane.T, extent=[0, 2*np.pi, 4, 0])
+    plt.imshow(Plane.T, extent=[0, np.pi/2, 2, 0])
+    plt.colorbar()
     plt.show()
 
 def generalWolfRegion(D):
     acc = 0.001
     D = 101
-    T = np.linspace(0,1,D)
+    T = np.linspace(-1,1,D)
     R = np.linspace(0,2,D)
     Plane = np.zeros((D,D))
     Plane2 = np.zeros((D,D))
@@ -99,21 +100,22 @@ def generalWolfRegion(D):
             P = GW.quantumPoint(t,r)
             # print(P)
             Qs = St.satoshiTest(P)
-            P2,Qn= Op.Best_point(B,acc)
+            _,Qn= Op.Best_point(B,acc)
             Plane[i][j] = Qs
             Plane2[i][j] = Qn
-
-    plt.imshow(Plane.T, extent=[0, 2*np.pi, 4, 0])
+            if Qn and (not Qs):
+                Qs = St.satoshiTestComment(P)
+    plt.imshow(Plane, extent=[0, 2*np.pi, 4, 0])
     plt.show()
-    plt.imshow(Plane2.T, extent=[0, 2*np.pi, 4, 0])
+    plt.imshow(Plane2, extent=[0, 2*np.pi, 4, 0])
     plt.show()
 
 
-N = 1000
+N = 10000
 D = 101
-# compareSatoshiAndNumeric(N)
+compareSatoshiAndNumeric(N)
 # pointsWithTwoSolutions(N)
 # generalDoubleTiltedRegion(D)
-generalWolfRegion(D)
+# generalWolfRegion(D)
 # GW.testWolfBQ()
 # GW.testWolfPoint()

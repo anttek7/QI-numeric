@@ -2,7 +2,7 @@ import numpy as np
 import CHSH
 import optimisation as Op
 import matplotlib.pyplot as plt
-
+acc = 1e-9
 # Pauli matrices:
 Gz = np.array([(1,0),(0,-1)])
 Gx = np.array([(0,1),(1,0)])
@@ -44,6 +44,10 @@ def CosAhalf(t, r):
     if l/m > 1:
         print("error: cos(a/2) > 1")
         return 0 
+    if m < acc:
+        print("error: m=0 ")
+        return 0 
+    
     return l/m
 
 def QValue(t,r):
@@ -65,7 +69,7 @@ def cotThetaHalf(t,r):
     m1 = -2*r*t*np.sqrt((2 - t**2) * (4 + r**2 - 4*t**2))
     m2 = -r**2 * (1 + 2*t**2 - t**4) - 4*(-1 +4*t**2 -4*t**4 + t**6)
     # print(l,m1+m2)
-    if m1+m2 <= 0:
+    if m1+m2 <= acc:
         print("error: m1+m2<=0")
         return 0
     return l/np.sqrt(m1+m2)
