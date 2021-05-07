@@ -51,7 +51,9 @@ def pointsWithTwoSolutions(N):
         a = np.random.rand()*2-1
         b = np.random.rand()*2-1
         c = np.random.rand()*2-1
-
+        a = 1/4
+        b = 1/8
+        c = 1/3
         P = [a,a,b,b,c,c,c,c]
         isExtremal = St.satoshiTest(P)
         print(isExtremal)
@@ -111,10 +113,10 @@ def generalWolfRegion(D):
     plt.show()
 
 
-N = 10000
+N = 1
 D = 101
-compareSatoshiAndNumeric(N)
-# pointsWithTwoSolutions(N)
+# compareSatoshiAndNumeric(N)
+pointsWithTwoSolutions(N)
 # generalDoubleTiltedRegion(D)
 # generalWolfRegion(D)
 # GW.testWolfBQ()
