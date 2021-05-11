@@ -100,7 +100,7 @@ def testWolfPoint():
     for i,t in enumerate(T):
         print(f'{i+1}/{len(T)}')
         B = functional(t,r)
-        P1, _ = Op.Best_point(B,0.001)
+        P1, _ = T.Best_point(B,0.001)
         P2 = quantumPoint(t,r)
         # print(P2)
         s1 = sum(P1)
@@ -120,7 +120,7 @@ def testWolfBQ():
     for i,t in enumerate(T):
         print(f'{i+1}/{len(T)}')
         B = functional(t,r)
-        bq1, _, _, _, _, _, _ = CHSH.chsh2(Op.vector_to_matrix(B), 0.0001)
+        bq1, _, _, _, _, _, _ = CHSH.chsh2(T.vector_to_matrix(B), 0.0001)
         bq2 = QValue(t,r)
         
         BQ1.append(bq1)
