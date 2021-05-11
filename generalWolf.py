@@ -1,6 +1,6 @@
 import numpy as np
 import CHSH
-import optimisation as Op
+import tools as T
 import matplotlib.pyplot as plt
 acc = 1e-9
 # Pauli matrices:
