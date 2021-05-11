@@ -2,11 +2,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import satoshi as St
-import optimisation as Op
+import tools as T
 import symmetricPoints as SP
 import tilted as Tl
 import generalWolf as GW
 import generalDoubleTilted as GDT
+import particularPoints as Pp
 
 def compareSatoshiAndNumeric(N):
     bothEx = 0
@@ -23,12 +24,12 @@ def compareSatoshiAndNumeric(N):
         b0 = np.random.rand()*2*np.pi
         b1 = np.random.rand()*2*np.pi
 
-        P = Op.find_P(theta, a0,a1,b0,b1)
+        P = T.find_P(theta, a0,a1,b0,b1)
 
         isExtremal = St.satoshiTest(P)
 
         accuracy = 0.001
-        isExtremal2 = Op.is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1)
+        isExtremal2 = T.is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1)
 
         if isExtremal:
             if isExtremal2:
@@ -48,13 +49,13 @@ def pointsWithTwoSolutions(N):
         if i%100==0:
             print(f'{i+1}/{N}')
 
-        a = np.random.rand()*2-1
+        a = np.random.rand()*0.25-0.125
         b = np.random.rand()*2-1
         c = np.random.rand()*2-1
-        a = 1/4
-        b = 1/8
-        c = 1/3
-        P = [a,a,b,b,c,c,c,c]
+        # a = 1/4
+        # b = 1/8
+        c = 1/np.sqrt(2)
+        P = [a,a,b,b,c,c,c,-c]
         isExtremal = St.satoshiTest(P)
         print(isExtremal)
 
@@ -68,7 +69,7 @@ def generalDoubleTiltedRegion(D):
         for j,a in enumerate(A):
             B = GDT.functional(a, phi)
             accuracy = 0.001
-            P, Qn = Op.Best_point(B,accuracy)
+            P, Qn = T.Best_point(B,accuracy)
 
             Qs = St.satoshiTest(P)
             if Qn:
@@ -102,7 +103,7 @@ def generalWolfRegion(D):
             P = GW.quantumPoint(t,r)
             # print(P)
             Qs = St.satoshiTest(P)
-            _,Qn= Op.Best_point(B,acc)
+            _,Qn= T.Best_point(B,acc)
             Plane[i][j] = Qs
             Plane2[i][j] = Qn
             if Qn and (not Qs):
@@ -112,12 +113,22 @@ def generalWolfRegion(D):
     plt.imshow(Plane2, extent=[0, 2*np.pi, 4, 0])
     plt.show()
 
+def hardySatoshi():
+    P = Pp.hardyPoint()
+    Qs = St.satoshiTestComment(P)
+    print("Hardy point:", Qs)
+    correct1, realisation, _ = T.twoQubitRepresentationComment(P)
+    if correct1:
+        theta, a0, a1, b0, b1 = realisation
+        Qn = T.is_exposed(theta, a0, a1, b0, b1, 0.0001)
+        print(Qn)
 
-N = 1
+N = 100000
 D = 101
 # compareSatoshiAndNumeric(N)
-pointsWithTwoSolutions(N)
+# pointsWithTwoSolutions(N)
 # generalDoubleTiltedRegion(D)
 # generalWolfRegion(D)
 # GW.testWolfBQ()
 # GW.testWolfPoint()
+hardySatoshi()
