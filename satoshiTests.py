@@ -8,7 +8,7 @@ import tilted as Tl
 import generalWolf as GW
 import generalDoubleTilted as GDT
 import particularPoints as Pp
-
+acc = 1e-9
 def compareSatoshiAndNumeric(N):
     bothEx = 0
     bothNoEx = 0
@@ -122,13 +122,204 @@ def hardySatoshi():
         theta, a0, a1, b0, b1 = realisation
         Qn = T.is_exposed(theta, a0, a1, b0, b1, 0.0001)
         print(Qn)
+def satoshiConditions(N):
+    s0STLM0 = 0
+    s1STLM0 = 0
+    s0STLM1 = 0
+    s1STLM1 = 0
+
+    for i in range(N):
+        if i%100==0:
+            print(f'{i+1}/{N}')
+        theta = np.random.rand()*np.pi/4
+        a0 = np.random.rand()*2*np.pi
+        a1 = np.random.rand()*2*np.pi
+        b0 = np.random.rand()*2*np.pi
+        b1 = np.random.rand()*2*np.pi
+
+        P = T.find_P(theta, a0, a1, b0, b1)
+        correct1, realisation, wholeSp = T.twoQubitRepresentation(P)
+        theta = realisation[0]
+        correct2  = St.STLM(P, theta)
+        if not correct1:
+            print("no 2-qubit realisation????")
+        if correct2 and wholeSp:
+            s1STLM1 += 1
+        elif correct2 and (not wholeSp):
+            s0STLM1 += 1
+        elif (not correct2) and wholeSp:
+            s1STLM0 += 1
+        elif (not correct2) and (not wholeSp):
+            s0STLM0 += 1
+        print(s0STLM0, s0STLM1, s1STLM0, s1STLM1)
+
+def checkCabelloPoint():
+    alpha = np.random.rand()*np.pi
+    beta = np.random.rand()*np.pi
+    P = Pp.cabelloPoint(alpha, beta, 0, 0)
+    print(St.satoshiTest(P))
+
+def testWagnerPoints(theta):
+    P = Pp.WagnerPoints(theta)
+    b = Pp.getWagnerB(theta)
+    _, a0, a1, b0, b1 = Pp.WagnerRealisation(theta)
+    wholeSp, theta = St.SPlusCondition(P)
+    stlm = St.STLM(P, theta)
+    if wholeSp and stlm:
+        Qs = 1
+    else:
+        Qs = 0
+    
+    accuracy = 0.001
+    Qn = T.is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1)
+    print(Qn, Qs)
+
+
+def hypothesis(N):
+    def research(theta, a0, a1, b0, b1):
+        def maximum(S):
+            m = 0
+            for x in range(2):
+                for y in range(2):
+                    if S[x][y] > m:
+                        m = S[x][y]
+            return m
+        def getThetaFromSinSquared(s):
+            return np.arccos(np.sqrt(1-s))
+
+        P = T.find_P(theta, a0, a1, b0, b1)
+        S_p, S_m = St.SPlusTemp(P)
+        print(S_p)
+        print(S_m)
+        flag = False
+        for x in range(2):
+                for y in range(2):
+                    thetaNew = getThetaFromSinSquared(S_p[x][y])
+                    Pnew = T.find_P(thetaNew, a0, a1, b0, b1)
+                    stlm = St.STLM(Pnew, thetaNew)
+                    print(stlm, "STLM")
+                    Qs = St.satoshiTest(Pnew)
+                    print(Qs, thetaNew)
+                    if Qs:
+                        flag = True
+
+        for x in range(2):
+                for y in range(2):
+                    thetaNew = getThetaFromSinSquared(S_m[x][y])
+                    Pnew = T.find_P(thetaNew, a0, a1, b0, b1)
+                    stlm = St.STLM(Pnew, thetaNew)
+                    print(stlm, "STLM")
+                    Qs = St.satoshiTest(Pnew)
+                    print(Qs, thetaNew)
+                    if Qs:
+                        flag = True
+        print("i co?", flag)
+
+    def research2(theta, a0, a1, b0, b1):
+        def maximum(S):
+            m = 0
+            for x in range(2):
+                for y in range(2):
+                    if S[x][y] > m:
+                        m = S[x][y]
+            return m
+        def getThetaFromSinSquared(s):
+            return np.arccos(np.sqrt(1-s))
+        def largerTheta(theta):
+            P = T.find_P(theta, a0, a1, b0, b1)
+            S_p, S_m = St.SPlusTemp(P)
+            # print(S_p)
+            # print(S_m)
+            thetaNew = getThetaFromSinSquared(maximum(S_p))
+            return thetaNew
+        print("Optimal theta start")
+        optTheta = optimalTheta(a0,a1,b0,b1)
+        print("Optimal theta end")
+        flag = False
+        while (theta < optTheta - acc) and (not flag):
+            Pnew = T.find_P(theta, a0, a1, b0, b1)
+            stlm = St.STLM(Pnew, theta)
+            Qs = St.satoshiTest(Pnew)
+            print(Qs, stlm, theta)
+            thetaNew = largerTheta(theta)
+            if Qs:
+                flag = True
+            if abs(thetaNew - theta) < acc:
+                flag = True
+            theta = thetaNew
+        print("Next")
+
+    s0STLM0 = 0
+    s1STLM0 = 0
+    s0STLM1 = 0
+    s1STLM1 = 0
+
+    for i in range(N):
+        if i%100==0:
+            print(f'{i+1}/{N}')
+        theta = np.random.rand()*np.pi/4
+        a0 = np.random.rand()*2*np.pi
+        a1 = np.random.rand()*2*np.pi
+        b0 = np.random.rand()*2*np.pi
+        b1 = np.random.rand()*2*np.pi
+
+        P = T.find_P(theta, a0, a1, b0, b1)
+        correct1, realisation, wholeSp = T.twoQubitRepresentation(P)
+        theta = realisation[0]
+        correct2 = St.STLM(P, theta)
+        if not correct1:
+            print("no 2-qubit realisation????")
+        if correct2 and wholeSp:
+            s1STLM1 += 1
+        elif correct2 and (not wholeSp):
+            research2(theta, a0, a1, b0, b1)
+            s0STLM1 += 1
+        elif (not correct2) and wholeSp:
+            s1STLM0 += 1
+        elif (not correct2) and (not wholeSp):
+            s0STLM0 += 1
+        # print(s0STLM0, s0STLM1, s1STLM0, s1STLM1)
+
+def optimalTheta(a0,a1,b0,b1):
+    n = 100
+    Theta = np.linspace(0, np.pi/2, n)
+    flag = 0
+    
+    for theta in Theta:
+        P = T.find_P(theta, a0, a1, b0, b1)
+        Q = St.satoshiTest(P)
+        if Q:
+            # print(theta,"treshold")
+            flag = 1
+            
+            # return theta
+        if (not Q) and flag == 1:
+            print(theta, "break")
+    if flag == 0:
+        print("not extremal")
+
 
 N = 100000
+# for i in range(N):
+#     if i%100==0:
+#         print(f'{i+1}/{N}')
+#     a0 = np.random.rand()*2*np.pi
+#     a1 = np.random.rand()*2*np.pi
+#     b0 = np.random.rand()*2*np.pi
+#     b1 = np.random.rand()*2*np.pi
+#     optimalTheta(a0,a1,b0,b1)
+#     print("asdfghjklkjhfdsdfghjkc")
 D = 101
-# compareSatoshiAndNumeric(N)
+compareSatoshiAndNumeric(N)
 # pointsWithTwoSolutions(N)
 # generalDoubleTiltedRegion(D)
 # generalWolfRegion(D)
 # GW.testWolfBQ()
 # GW.testWolfPoint()
-hardySatoshi()
+# hardySatoshi()
+# satoshiConditions(N)
+# checkCabelloPoint()
+# for theta in np.linspace(0, np.pi/4, 100):
+#     testWagnerPoints(theta)
+
+# hypothesis(N)

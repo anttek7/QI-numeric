@@ -6,6 +6,16 @@ import CHSH
 
 acc = 1e-9
 
+def generalPoint(state, A0, A1, B0, B1):
+    def correlator(rho, Operator1, Operator2):
+        M = np.matmul(rho, np.kron(Operator1, Operator2))
+        return np.trace(M)
+    I = np.array([(1,0),(0,1)])
+    rho = np.outer(state,state)
+    
+    return (correlator(rho, A0, I), correlator(rho, A1, I), correlator(rho, I, B0), correlator(rho, I, B1),
+     correlator(rho, A0, B0), correlator(rho, A0, B1), correlator(rho, A1, B0), correlator(rho, A1, B1))
+
 def find_psi(theta):
     return np.array([np.cos(theta/2), 0, 0, np.sin(theta/2)])
 def find_P(theta, a0,a1,b0,b1):
@@ -211,8 +221,9 @@ def twoQubitRepresentation(P):
         for x in range(2):
             for y in range(2):
                 delta = J[x][y]**2 - 4* K[x][y]**2
+                # print(delta, "delta")
                 if delta < -acc:
-                    print(delta, "delta")
+                    # print(delta, "delta")
                     return 0,0,0
                 if delta < 0 and delta > - acc:
                     delta = 0
@@ -274,12 +285,17 @@ def twoQubitRepresentation(P):
         CosB = [P[2]/np.cos(theta), P[3]/np.cos(theta)]
         return CosA, CosB
     def verifyCosines(CosA, CosB):
-        for c in CosA:
+        for i,c in enumerate(CosA):
             if np.abs(c) > 1+acc:
                 return 0
-        for c in CosB:
+            elif np.abs(c) > 1:
+                CosA[i] = 1
+
+        for i,c in enumerate(CosB):
             if np.abs(c) > 1+acc:
                 return 0
+            elif np.abs(c) > 1:
+                CosB[i] = 1
         return 1
     def checkProductCondition(P, theta):
         A,B,AB = createCorrelatorsAndMarginals(P)
@@ -301,7 +317,7 @@ def twoQubitRepresentation(P):
         for x in range(2):
             for y in range(2):
                 Sxy[x][y] = (AB[x][y] - CosA[x]*CosB[y])/np.sin(theta)
-
+        # print(CosA[0], "blablaba")
         SinA[0] = np.sqrt(1 - CosA[0]**2)
         SinB[0] = Sxy[0][0]/SinA[0]
         SinB[1] = Sxy[0][1]/SinA[0]
@@ -420,6 +436,7 @@ def twoQubitRepresentationComment(P):
         for x in range(2):
             for y in range(2):
                 delta = J[x][y]**2 - 4* K[x][y]**2
+                print(delta, "delta")
                 if delta < -acc:
                     print(delta, "delta")
                     return 0,0,0
@@ -484,12 +501,17 @@ def twoQubitRepresentationComment(P):
         return CosA, CosB
     
     def verifyCosines(CosA, CosB):
-        for c in CosA:
+        for i,c in enumerate(CosA):
             if np.abs(c) > 1+acc:
                 return 0
-        for c in CosB:
+            elif np.abs(c) > 1:
+                CosA[i] = 1
+
+        for i,c in enumerate(CosB):
             if np.abs(c) > 1+acc:
                 return 0
+            elif np.abs(c) > 1:
+                CosB[i] = 1
         return 1
 
     def checkProductCondition(P, theta):
