@@ -45,7 +45,7 @@ def dP_dA(theta,a0,a1,b0,b1,i):
     else:
         dP[4 + i%2] = -np.sin(A[2 + i%2])*np.cos(A[0]) + np.sin(theta)*np.cos(A[2 + i%2])*np.sin(A[0])
         dP[6 + i%2] = -np.sin(A[2 + i%2])*np.cos(A[1]) + np.sin(theta)*np.cos(A[2 + i%2])*np.sin(A[1])        
-    return np.round(dP,10)
+    return dP
 
 def find_dP_da0(theta,a0,a1,b0,b1):
     dP = dP_dA(theta,a0,a1,b0,b1,0)
@@ -90,6 +90,41 @@ def find_A_eq(theta,a0,a1,b0,b1):
     dP_db1 = find_dP_db1(theta,a0,a1,b0,b1)
     A_eq = np.vstack([dP_dtheta, dP_da0, dP_da1, dP_db0, dP_db1])
     return A_eq
+
+def find_eigen1(theta, a0, a1, b0,b1):
+    f1 = np.sin(theta/2) * np.sin(a0)
+    f2 = np.sin(theta/2) * np.sin(a1)
+    f3 = np.cos(theta/2) * np.sin(b0)
+    f4 = np.cos(theta/2) * np.sin(b1)
+    f5 = np.cos(theta/2) * np.sin(b0) * np.cos(a0) - np.sin(theta/2) * np.cos(b0) * np.sin(a0)
+    f6 = np.cos(theta/2) * np.sin(b1) * np.cos(a0) - np.sin(theta/2) * np.cos(b1) * np.sin(a0)
+    f7 = np.cos(theta/2) * np.sin(b0) * np.cos(a1) - np.sin(theta/2) * np.cos(b0) * np.sin(a1)
+    f8 = np.cos(theta/2) * np.sin(b1) * np.cos(a1) - np.sin(theta/2) * np.cos(b1) * np.sin(a1)
+    return [f1,f2,f3,f4,f5,f6,f7,f8]
+
+def find_eigen2(theta, a0, a1, b0,b1):
+    f1 = np.cos(theta/2) * np.sin(a0)
+    f2 = np.cos(theta/2) * np.sin(a1)
+    f3 = np.sin(theta/2) * np.sin(b0)
+    f4 = np.sin(theta/2) * np.sin(b1)
+    f5 = np.cos(theta/2) * np.sin(a0) * np.cos(b0) - np.sin(theta/2) * np.cos(a0) * np.sin(b0)
+    f6 = np.cos(theta/2) * np.sin(a0) * np.cos(b1) - np.sin(theta/2) * np.cos(a0) * np.sin(b1)
+    f7 = np.cos(theta/2) * np.sin(a1) * np.cos(b0) - np.sin(theta/2) * np.cos(a1) * np.sin(b0)
+    f8 = np.cos(theta/2) * np.sin(a1) * np.cos(b1) - np.sin(theta/2) * np.cos(a1) * np.sin(b1)
+    return [f1,f2,f3,f4,f5,f6,f7,f8]
+
+def find_A_eq_restricted(theta,a0,a1,b0,b1):
+    dP_dtheta = find_dP_dtheta(theta,a0,a1,b0,b1)
+    dP_da0 = find_dP_da0(theta,a0,a1,b0,b1)
+    dP_da1 = find_dP_da1(theta,a0,a1,b0,b1)
+    dP_db0 = find_dP_db0(theta,a0,a1,b0,b1)
+    dP_db1 = find_dP_db1(theta,a0,a1,b0,b1)
+    eigen1 = find_eigen1(theta, a0, a1, b0,b1)
+    eigen2 = find_eigen2(theta, a0, a1, b0,b1)
+    A_eq = np.vstack([dP_dtheta, dP_da0, dP_da1, dP_db0, dP_db1, eigen1, eigen2])
+    print(np.linalg.matrix_rank(A_eq), "matrix A_eq rank")
+    return A_eq
+
 def B_add_limit(limit, A_ub, b_ub):
     A = np.eye(8)
     A_ub = np.append(A_ub,A, axis=0)
@@ -110,6 +145,7 @@ def vector_to_matrix(V):
     matrix[2][1] = V[6]
     matrix[2][2] = V[7]
     return matrix
+
 def matrix_to_vector(matrix):
     V = np.zeros(8)
     V[2] = matrix[0][1]
@@ -122,7 +158,7 @@ def matrix_to_vector(matrix):
     V[7] = matrix[2][2]
     return V
 
-def Best_func(theta,a0,a1,b0,b1, limit):
+def Best_func(theta,a0,a1,b0,b1, limit=1):
     P = find_P(theta,a0,a1,b0,b1)
     c = -P    
     A_ub = find_A_ub()
@@ -130,6 +166,20 @@ def Best_func(theta,a0,a1,b0,b1, limit):
     A_ub, b_ub = B_add_limit(limit, A_ub, b_ub)
     A_eq = find_A_eq(theta,a0,a1,b0,b1)
     b_eq = np.zeros(5)
+    bound = (None, None)
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq = A_eq, b_eq = b_eq, bounds=bound, method='revised simplex')
+    maxi = -res.fun 
+    B = res.x
+    return B, maxi 
+
+def Best_func_restricted(theta,a0,a1,b0,b1, limit=1):
+    P = find_P(theta,a0,a1,b0,b1)
+    c = -P    
+    A_ub = find_A_ub()
+    b_ub = np.ones(16)
+    A_ub, b_ub = B_add_limit(limit, A_ub, b_ub)
+    A_eq = find_A_eq_restricted(theta,a0,a1,b0,b1)
+    b_eq = np.zeros(7)
     bound = (None, None)
     res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq = A_eq, b_eq = b_eq, bounds=bound, method='revised simplex')
     maxi = -res.fun 
@@ -145,7 +195,6 @@ def Best_point(B,accuracy):
     #correlators = CHSH.find_correlators(alpha, beta, state, accuracy)
     P = matrix_to_vector(correlators)
     return P, Nonlocal
-
 
 def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
     P = find_P(theta,a0,a1,b0,b1)
@@ -170,18 +219,25 @@ def is_exposed(theta,a0,a1,b0,b1, accuracy,limit=1):
     else:
         return 0
 
-
 def is_nonlocal(B):
     accuracy = 0.0001
     P, Nonlocal = Best_point(B,accuracy)
     return P, Nonlocal
+
+def is_nonlocalPoint(P):
+    chsh = np.array([[0,0,0,0,1,1,1,-1],[0,0,0,0,1,1,-1,1],[0,0,0,0,1,-1,1,1],[0,0,0,0,-1,1,1,1],[0,0,0,0,-1,-1,-1,1],[0,0,0,0,-1,-1,1,-1],[0,0,0,0,-1,1,-1,-1],[0,0,0,0,1,-1,-1,-1]])
+    result = np.dot(chsh,np.array(P))
+    if max(np.abs(result)) > 2:
+        # print(max(np.abs(result)), "CHSH value")
+        return 1
+    else:
+        return 0
 
 def createCorrelatorsAndMarginals(P):
     A = np.array([P[0], P[1]])
     B = np.array([P[2], P[3]])
     AB = np.array([[P[4], P[5]],[P[6], P[7]]])
     return A,B,AB
-
 
 def twoQubitRepresentation(P):
     '''
@@ -225,7 +281,7 @@ def twoQubitRepresentation(P):
                 if delta < -acc:
                     # print(delta, "delta")
                     return 0,0,0
-                if delta < 0 and delta > - acc:
+                if (delta < 0) and (delta > - acc):
                     delta = 0
                 S_p[x][y] = (J[x][y] + np.sqrt(delta))/2
                 S_m[x][y] = (J[x][y] - np.sqrt(delta))/2
@@ -397,8 +453,46 @@ def twoQubitRepresentation(P):
     realisation = (theta,a0,a1,b0,b1)
     return 1, realisation, wholeSp
 
-################ functions for debugging
+def TLM(P):
+    A,B,AB = createCorrelatorsAndMarginals(P)
+    
+    I = np.abs(AB[0][0]*AB[0][1] - AB[1][0]*AB[1][1])
+    I -= np.sqrt(1 - AB[0][0]**2)*np.sqrt(1 - AB[0][1]**2)
+    I -= np.sqrt(1 - AB[1][0]**2)*np.sqrt(1 - AB[1][1]**2)
 
+    if np.abs(I) <= acc:
+        return 1
+    else:
+        return 0
+
+def TLM2(P):
+    A,B,AB = createCorrelatorsAndMarginals(P)
+    
+    I1 = 1
+    I2 = 1
+    I3 = 0
+    for x in range(2):
+        for y in range(2):
+            I1 *= AB[x][y]
+            I2 *= np.sqrt(1 - AB[x][y]**2)
+            I3 -= (AB[x][y]**2)/2
+    I = 1 + I1 + I2 + I3
+    if np.abs(I) <= acc:
+        return 1
+    else:
+        return 0
+
+def hypoTreshold(a0,a1,b0,b1):
+    def value1(a,b):
+        return -np.sin(a)*np.sin(b)/(np.cos(a)*np.cos(b) - 1)
+    def value2(a,b):
+        return -np.sin(a)*np.sin(b)/(np.cos(a)*np.cos(b) + 1)
+    return max(value1(a0,b0),value2(a0,b0), value1(a0,b1),value2(a0,b1),value1(a1,b0),value2(a1,b0),value1(a1,b1),value2(a1,b1))
+
+def getThetaFromSinSquared(s):
+    return np.arccos(np.sqrt(1-s))
+
+################ function for debugging
 def twoQubitRepresentationComment(P):
     '''
     returns (if point has 2-qubit realisation {0,1}, possible realisation(theta, a0, a1, b0, b1), if matrix Sp has all the same components)
@@ -460,8 +554,7 @@ def twoQubitRepresentationComment(P):
                     if np.abs(s - S[x][y]) > acc:
                         return 0
             return 1
-        def getThetaFromSinSquared(s):
-            return np.arccos(np.sqrt(1-s))
+        
 
         def interpret(c1,c2,c3,c4, S_p, S_m):
             # returns (is there any solution? {0,1}, all S_p {0,1}, table of solutions)
@@ -574,7 +667,7 @@ def twoQubitRepresentationComment(P):
     K = findK(A,B,AB)
     J = findJ(A,B,AB)
     correct, S_p, S_m = findS(K,J)
-
+    print(S_p,"\n", S_m,"S_p, S_m")
     if not correct:
         print("delta < 0")
         return 0, garbage, 0
@@ -612,3 +705,58 @@ def twoQubitRepresentationComment(P):
 
     realisation = (theta,a0,a1,b0,b1)
     return 1, realisation, wholeSp
+
+def SpSm(P):
+    '''
+    returns (if point has 2-qubit realisation {0,1}, possible realisation(theta, a0, a1, b0, b1), if matrix Sp has all the same components)
+    '''
+
+    def checkIfProperRange(P):
+        for x in P:
+            if np.abs(x) > 1:
+                return 0
+        return 1
+
+    def checkIfNonZeroMarginals(P):
+        for i in range(4):
+            if np.abs(P[i]) > acc:
+                return 1
+        return 0
+
+    def findK(A,B,AB):
+        K = np.zeros((2,2))
+        for x in range(2):
+            for y in range(2):
+                K[x][y] = AB[x][y] - A[x]*B[y]
+        return K
+
+    def findJ(A,B,AB):
+        J = np.zeros((2,2))
+        for x in range(2):
+            for y in range(2):
+                J[x][y] = AB[x][y]**2 - A[x]**2 - B[y]**2 + 1
+        return J
+
+    def findS(K,J):
+        S_p = np.zeros((2,2))
+        S_m = np.zeros((2,2))
+        
+        for x in range(2):
+            for y in range(2):
+                delta = J[x][y]**2 - 4* K[x][y]**2
+                # print(delta, "delta")
+                if delta < -acc:
+                    # print(delta, "delta")
+                    return 0,0,0
+                if (delta < 0) and (delta > - acc):
+                    delta = 0
+                S_p[x][y] = (J[x][y] + np.sqrt(delta))/2
+                S_m[x][y] = (J[x][y] - np.sqrt(delta))/2
+        return 1,S_p, S_m
+    A,B,AB = createCorrelatorsAndMarginals(P)
+    K = findK(A,B,AB)
+    J = findJ(A,B,AB)
+    correct, S_p, S_m = findS(K,J)
+    print(S_p)
+    print(S_m)
+ 

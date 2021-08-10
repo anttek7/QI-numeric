@@ -28,7 +28,7 @@ def STLM(P, theta):
         for y in range(2):
             CA[x][y] = AB[x][y]/DA[y]
             CB[x][y] = AB[x][y]/DB[x]
-    
+    # print("temp",CA[0][0]**2,CA[1][0]**2, CA[0][1]**2,CA[1][1]**2)
     IEA = np.abs(CA[0][0]*CA[0][1] - CA[1][0]*CA[1][1])
     IEA -= np.sqrt(1 - CA[0][0]**2)*np.sqrt(1 - CA[0][1]**2)
     IEA -= np.sqrt(1 - CA[1][0]**2)*np.sqrt(1 - CA[1][1]**2)
@@ -36,7 +36,7 @@ def STLM(P, theta):
     IEB = np.abs(CB[0][0]*CB[0][1] - CB[1][0]*CB[1][1])
     IEB -= np.sqrt(1 - CB[0][0]**2)*np.sqrt(1 - CB[0][1]**2)
     IEB -= np.sqrt(1 - CB[1][0]**2)*np.sqrt(1 - CB[1][1]**2)
-
+    # print("temp",IEA, IEB)
     if np.abs(IEA) <= acc and np.abs(IEB) <= acc:
         return 1
     else:
