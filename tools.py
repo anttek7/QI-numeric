@@ -378,7 +378,7 @@ def twoQubitRepresentation(P):
         for x in range(2):
             for y in range(2):
                 Sxy[x][y] = (AB[x][y] - CosA[x]*CosB[y])/np.sin(theta)
-                print(Sxy[x][y], f"sin a{x} sin b{y}")
+                # print(Sxy[x][y], f"sin a{x} sin b{y}")
         # print(CosA[0], "blablaba")
         if (np.abs(np.abs(CosA[0])-1) < acc) and (np.abs(np.abs(CosB[0])-1) < acc):
             SinA[0] = 0
@@ -528,7 +528,7 @@ def is_exposed_hypo(theta, a0,a1,b0,b1):
     P = find_P(np.pi/2, a0,a1,b0,b1)
     tlm = TLM(P)
     theta_t = np.arcsin(hypoTresholdImproved(a0,a1,b0,b1))
-    print(theta_t, "theta_t")
+    # print(theta_t, "theta_t")
     if (theta >= theta_t) and tlm:
         return 1
     else:

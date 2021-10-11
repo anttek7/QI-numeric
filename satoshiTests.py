@@ -828,10 +828,47 @@ def notUniquePointsInvestigating(N):
             print(T.TLM(Ptlm), "Tlm")
             print(T.is_exposed(theta, a0,a1,b0,b1,0.001), "exposed")
 
-            
+def generalWolfTest(D):
+    
+    tt = np.linspace(-0.99,0.99, D)
+    R = np.linspace(0,2, D)
+    Map = np.zeros((D,D))
+    for x,t in enumerate(tt):    
+        for y,r in enumerate(R):
+            P = GW.quantumPoint(t, r)
+            correct, realisation, wholeSp = T.twoQubitRepresentation(P)    
+            theta, a0, a1, b0, b1 = realisation        
+            ext1 = T.is_exposed_hypo(theta, a0, a1, b0, b1)
+            # ext2 = T.is_exposed(theta, a0, a1, b0, b1, 1e-4)
+            Map[D-x-1][y] = ext1
+    plt.imshow(Map, extent=[0, 2, -1, 1])
+    plt.colorbar()
+    plt.xlabel("alpha1")
+    plt.ylabel("alpha0")
+    plt.savefig("wolf.png")
+    plt.show()
 
+def doubleTiltedTest(D):
+    eps = 1e-2
+    Phi = np.linspace(eps, np.pi/2- eps, D)
+    Al = np.linspace(eps,2-eps, D)
+    Map = np.zeros((D,D))
+    for x,al in enumerate(Al):    
+        for y,phi in enumerate(Phi):
+            P = GDT.quantumPoint(al, phi)
+            correct, realisation, wholeSp = T.twoQubitRepresentation(P)    
+            theta, a0, a1, b0, b1 = realisation        
+            ext1 = T.is_exposed_hypo(theta, a0, a1, b0, b1)
+            # ext2 = T.is_exposed(theta, a0, a1, b0, b1, 1e-4)
+            Map[D-x-1][y] = ext1
+    plt.imshow(Map, extent=[-1, 1, 0, 2])
+    plt.colorbar()
+    plt.xlabel("phi")
+    plt.ylabel("alpha")
+    plt.savefig("doubleTilted.png")
+    plt.show()
 N = 200
-D = 101
+D = 100
 
 # compareSatoshiAndNumeric(N)
 # pointsWithTwoSolutions(N)
@@ -863,10 +900,12 @@ D = 101
 # tlmVSstlm(N)
 # SpSmTheta(N)
 # SpvsThreshold(N)
-nonnegativitySingularity(N)
+# nonnegativitySingularity(N)
 # moveHardy(N)
 # decompositionTest(N)
 # decomposition(N)
 # notUniquePoint()
 # tangentToCriticalPoint(N)
 # notUniquePointsInvestigating(N)
+# generalWolfTest(D)
+doubleTiltedTest(D)
