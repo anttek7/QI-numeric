@@ -26,8 +26,8 @@ def STLM(P, theta):
     CB = np.zeros((2,2))
     for x in range(2):
         for y in range(2):
-            CA[x][y] = AB[x][y]/DA[y]
-            CB[x][y] = AB[x][y]/DB[x]
+            CA[x][y] = np.round(AB[x][y]/DA[y],9)
+            CB[x][y] = np.round(AB[x][y]/DB[x],9)
     # print("temp",CA[0][0]**2,CA[1][0]**2, CA[0][1]**2,CA[1][1]**2)
     IEA = np.abs(CA[0][0]*CA[0][1] - CA[1][0]*CA[1][1])
     IEA -= np.sqrt(1 - CA[0][0]**2)*np.sqrt(1 - CA[0][1]**2)
@@ -145,7 +145,7 @@ def SPlusCondition(P):
     K = findK(A,B,AB)
     J = findJ(A,B,AB)
     correct, S_p, S_m = findS(K,J)
-
+    
     if not correct:
         print("delta < 0")
         return 0,0
@@ -295,15 +295,18 @@ def STLMComment(P, theta):
     DB = np.zeros(2)
     for x in range(2):
         DB[x] = np.sqrt(A[x]**2 + np.sin(theta)**2)
+        # print(DB[x])
     for y in range(2):
         DA[y] = np.sqrt(B[y]**2 + np.sin(theta)**2)
+        # print(DA[y])
     # print(DA,DB,"DA, DB")
     CA = np.zeros((2,2))
     CB = np.zeros((2,2))
     for x in range(2):
         for y in range(2):
-            CA[x][y] = AB[x][y]/DA[y]
-            CB[x][y] = AB[x][y]/DB[x]
+            CA[x][y] = round(AB[x][y]/DA[y],9)
+            CB[x][y] = round(AB[x][y]/DB[x],9)
+            print(CA[x][y],CB[x][y])
     
     IEA = np.abs(CA[0][0]*CA[0][1] - CA[1][0]*CA[1][1])
     IEA -= np.sqrt(1 - CA[0][0]**2)*np.sqrt(1 - CA[0][1]**2)

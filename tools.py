@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import linprog
 from numpy import linalg as LA
+from scipy.optimize import fsolve
 import CHSH
 
-acc = 1e-9
+acc = 1e-5
 
 def generalPoint(state, A0, A1, B0, B1):
     def correlator(rho, Operator1, Operator2):
@@ -344,14 +345,18 @@ def twoQubitRepresentation(P):
         for i,c in enumerate(CosA):
             if np.abs(c) > 1+acc:
                 return 0
-            elif np.abs(c) > 1:
+            elif c > 1:
                 CosA[i] = 1
+            elif c <- 1:
+                CosA[i] = -1
 
         for i,c in enumerate(CosB):
             if np.abs(c) > 1+acc:
                 return 0
-            elif np.abs(c) > 1:
+            elif c > 1:
                 CosB[i] = 1
+            elif c <- 1:
+                CosB[i] = -1
         return 1
     def checkProductCondition(P, theta):
         A,B,AB = createCorrelatorsAndMarginals(P)
@@ -373,11 +378,29 @@ def twoQubitRepresentation(P):
         for x in range(2):
             for y in range(2):
                 Sxy[x][y] = (AB[x][y] - CosA[x]*CosB[y])/np.sin(theta)
+                print(Sxy[x][y], f"sin a{x} sin b{y}")
         # print(CosA[0], "blablaba")
-        SinA[0] = np.sqrt(1 - CosA[0]**2)
-        SinB[0] = Sxy[0][0]/SinA[0]
-        SinB[1] = Sxy[0][1]/SinA[0]
-        SinA[1] = Sxy[1][0]/Sxy[0][0]*SinA[0]
+        if (np.abs(np.abs(CosA[0])-1) < acc) and (np.abs(np.abs(CosB[0])-1) < acc):
+            SinA[0] = 0
+            SinB[0] = 0
+            SinA[0] = np.sqrt(CosA[1]**2 - 1)
+            SinB[1] = Sxy[1][1]/SinA[1]
+        else:            
+            if np.abs(np.abs(CosA[0])-1) < acc:  
+                print("Error- Special case, in computing sines. Please check manually")
+                SinA[0] = 0
+                SinA[1] = 0
+                SinB[0] = 0
+                SinB[1] = 0
+            else:
+                SinA[0] = np.sqrt(1 - CosA[0]**2)
+                SinB[0] = Sxy[0][0]/SinA[0]
+                SinB[1] = Sxy[0][1]/SinA[0]
+                if np.abs(Sxy[0][0]) < acc:
+                    SinA[1] = Sxy[1][1]/Sxy[0][1]*SinA[0]    
+                    print("Special case, in computing sines. Please check manually")
+                else:
+                    SinA[1] = Sxy[1][0]/Sxy[0][0]*SinA[0]
         return SinA, SinB
         
     def getAnglesFromTrig(SinA, SinB, CosA, CosB):
@@ -426,8 +449,8 @@ def twoQubitRepresentation(P):
             print("Sm = Sp, one mutual solution")
         else:
             print("Sm != Sp, two different solutions!")
-            print(P)
-            print(thetaTable)
+            # print(P, "punkt")
+            print(thetaTable, "thety")
             print(S_p,'\n', S_m)
         theta = thetaTable[0]
         # temporarly take the first one
@@ -437,7 +460,6 @@ def twoQubitRepresentation(P):
     CosA, CosB = getCosines(P, theta)
     correct = verifyCosines(CosA, CosB)
     
-    # print(np.sin(theta)**2, "sin^2theta")
     if not correct:
         print("wrong ranges of the obtained cosines")
         return 0, garbage, 0
@@ -447,9 +469,11 @@ def twoQubitRepresentation(P):
         print("Product condition is not satisfied")
         return 0, garbage, 0
     SinA, SinB = getSines(P, CosA, CosB, theta)
-    
+    # print(CosA,SinA, "cos, sin A")
+    # print(CosB,SinB, "cos, sin B")
     a0, a1, b0, b1 = getAnglesFromTrig(SinA, SinB, CosA, CosB)
-
+    # print(np.cos(a0), np.cos(a1),np.sin(a0),np.sin(a1), "cos, sin A")
+    # print(np.cos(b0), np.cos(b1),np.sin(b0),np.sin(b1), "cos, sin B")
     realisation = (theta,a0,a1,b0,b1)
     return 1, realisation, wholeSp
 
@@ -459,7 +483,6 @@ def TLM(P):
     I = np.abs(AB[0][0]*AB[0][1] - AB[1][0]*AB[1][1])
     I -= np.sqrt(1 - AB[0][0]**2)*np.sqrt(1 - AB[0][1]**2)
     I -= np.sqrt(1 - AB[1][0]**2)*np.sqrt(1 - AB[1][1]**2)
-
     if np.abs(I) <= acc:
         return 1
     else:
@@ -489,9 +512,111 @@ def hypoTreshold(a0,a1,b0,b1):
         return -np.sin(a)*np.sin(b)/(np.cos(a)*np.cos(b) + 1)
     return max(value1(a0,b0),value2(a0,b0), value1(a0,b1),value2(a0,b1),value1(a1,b0),value2(a1,b0),value1(a1,b1),value2(a1,b1))
 
+def hypoTresholdImproved(a0,a1,b0,b1):
+    def value1(a,b):
+        if np.cos(a)*np.cos(b) == 1:
+            return 0
+        return -np.sin(a)*np.sin(b)/(np.cos(a)*np.cos(b) - 1)
+    def value2(a,b):
+        if np.cos(a)*np.cos(b) == -1:
+            return 0
+        return -np.sin(a)*np.sin(b)/(np.cos(a)*np.cos(b) + 1)
+
+    return max(value1(a0,b0),value2(a0,b0), value1(a0,b1),value2(a0,b1),value1(a1,b0),value2(a1,b0),value1(a1,b1),value2(a1,b1))
+
+def is_exposed_hypo(theta, a0,a1,b0,b1):
+    P = find_P(np.pi/2, a0,a1,b0,b1)
+    tlm = TLM(P)
+    theta_t = np.arcsin(hypoTresholdImproved(a0,a1,b0,b1))
+    print(theta_t, "theta_t")
+    if (theta >= theta_t) and tlm:
+        return 1
+    else:
+        return 0
+
 def getThetaFromSinSquared(s):
     return np.arccos(np.sqrt(1-s))
 
+def find_A_eq_deco(decomposers):
+    n = len(decomposers)
+    A = decomposers[0]
+    for i,P in enumerate(decomposers):
+        if i >0:
+            A = np.c_[ A,P]
+    A = np.r_[A,[np.ones(n)]]
+    return A
+
+def decomposeP(P, decomposers):
+    n = len(decomposers)
+    # print("How many decomposers:", n)
+    c = np.arange(n)
+    A_ub = -np.eye(n)
+    b_ub = np.zeros(n)
+    A_eq = find_A_eq_deco(decomposers)
+    b_eq = np.r_[P,1]
+    # print(A_eq, b_eq)
+    bound = (None, None)
+    res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq = A_eq, b_eq = b_eq, bounds=bound, method='revised simplex')
+    min = res.fun 
+    alpha = res.x
+    status = res.status
+    # print(res.status, "status")
+    # if status == 0:
+    #     print(A_eq@alpha, "final point")
+    return alpha, min, status
+
+def BeyondNonNegativityFacet(P):
+    A, B, AB = createCorrelatorsAndMarginals(P)
+    aa = [0,1]
+    bb = [0,1]
+    X = [0,1]
+    Y = [0,1]
+    flag = 0
+    for x in X:
+        for y in Y:
+            for a in aa:
+                for b in bb:
+                    if (-1)**(a+b)*AB[x][y] + 1 + A[x]*(-1)**(a) + B[y]*(-1)**(b) < -acc:
+                        flag = 1
+                        print(f"Broken non-negativity facet: x,y={x},{y}, a,b = {a},{b}")
+    return flag
+def isOnNonNegativityFacet(P):
+    A, B, AB = createCorrelatorsAndMarginals(P)
+    aa = [0,1]
+    bb = [0,1]
+    X = [0,1]
+    Y = [0,1]
+    flag = 0
+    for x in X:
+        for y in Y:
+            for a in aa:
+                for b in bb:
+                    if np.abs((-1)**(a+b)*AB[x][y] + 1 + A[x]*(-1)**(a) + B[y]*(-1)**(b)) < acc:
+                        flag = 1
+                        print(f"On non-negativity facet: x,y={x},{y}, a,b = {a},{b}")
+    return flag
+
+def notUniquePoints():
+    A0 = np.random.rand()
+    A1 = np.random.rand()
+    # B0 = np.random.rand()
+    # B1 = np.random.rand()
+    def eqs(vars):
+        B0, B1, A0B0 = vars
+        A0B1 = A0B0 - A0*B0 + A0*B1
+        A1B0 = -(A0B0 - A0*B0) + A1*B0
+        A1B1 = -(A0B0 - A0*B0) + A1*B1
+        eq1 = A0B0**2 - A0**2 - B0**2 - A0B1**2 + A0**2 + B1**2
+        eq2 = A0B0**2 - A0**2 - B0**2 - A1B0**2 + A1**2 + B0**2
+        eq3 = A0B0**2 - A0**2 - B0**2 - A1B1**2 + A1**2 + B1**2
+        return [eq1, eq2, eq3]
+    
+    B0, B1, A0B0 =  fsolve(eqs, (0.5, 0.5, 0.5))
+
+    A0B1 = A0B0 - A0*B0 + A0*B1
+    A1B0 = -(A0B0 - A0*B0) + A1*B0
+    A1B1 = -(A0B0 - A0*B0) + A1*B1
+    return A0, A1, B0, B1, A0B0, A0B1, A1B0, A1B1
 ################ function for debugging
 def twoQubitRepresentationComment(P):
     '''
@@ -705,7 +830,6 @@ def twoQubitRepresentationComment(P):
 
     realisation = (theta,a0,a1,b0,b1)
     return 1, realisation, wholeSp
-
 def SpSm(P):
     '''
     returns (if point has 2-qubit realisation {0,1}, possible realisation(theta, a0, a1, b0, b1), if matrix Sp has all the same components)
@@ -759,4 +883,242 @@ def SpSm(P):
     correct, S_p, S_m = findS(K,J)
     print(S_p)
     print(S_m)
- 
+
+def twoQubitRepresentationSpecial(P):
+    '''
+    returns (if point has 2-qubit realisation {0,1}, possible realisation(theta, a0, a1, b0, b1), if matrix Sp has all the same components)
+    '''
+
+    def checkIfProperRange(P):
+        for x in P:
+            if np.abs(x) > 1:
+                return 0
+        return 1
+
+    def checkIfNonZeroMarginals(P):
+        for i in range(4):
+            if np.abs(P[i]) > acc:
+                return 1
+        return 0
+    
+    def findK(A,B,AB):
+        K = np.zeros((2,2))
+        for x in range(2):
+            for y in range(2):
+                K[x][y] = AB[x][y] - A[x]*B[y]
+        return K
+
+    def findJ(A,B,AB):
+        J = np.zeros((2,2))
+        for x in range(2):
+            for y in range(2):
+                J[x][y] = AB[x][y]**2 - A[x]**2 - B[y]**2 + 1
+        return J
+
+    def findS(K,J):
+        S_p = np.zeros((2,2))
+        S_m = np.zeros((2,2))
+        
+        for x in range(2):
+            for y in range(2):
+                delta = J[x][y]**2 - 4* K[x][y]**2
+                # print(delta, "delta")
+                if delta < -acc:
+                    # print(delta, "delta")
+                    return 0,0,0
+                if (delta < 0) and (delta > - acc):
+                    delta = 0
+                S_p[x][y] = (J[x][y] + np.sqrt(delta))/2
+                S_m[x][y] = (J[x][y] - np.sqrt(delta))/2
+        return 1,S_p, S_m
+    
+    def findSolutionInS(S_p, S_m):
+        def checkRepetitionInBoth(s, S_p, S_m):
+            for x in range(2):
+                for y in range(2):
+                    if ( np.abs(s - S_p[x][y]) > acc ) and (np.abs(s - S_m[x][y]) > acc ):
+                        return 0
+            return 1
+        def checkRepetitionInOne(S):
+            s = S[0][0]
+            for x in range(2):
+                for y in range(2):
+                    if np.abs(s - S[x][y]) > acc:
+                        return 0
+            return 1
+        def getThetaFromSinSquared(s):
+            return np.arccos(np.sqrt(1-s))
+
+        def interpret(c1,c2,c3,c4, S_p, S_m):
+            # returns (is there any solution? {0,1}, all S_p {0,1}, table of solutions)
+            if (not c1) and (not c2):
+                # no solution
+                return 0, 0, [0]
+            if c1 and (not c3) and (not c4):
+                # one solution but not only S_p or S_m
+                return 1, 0, [getThetaFromSinSquared(S_p[0][0])]
+            if c2 and (not c1) and (not c4):
+                # one solution but not only S_m or S_p
+                return 1, 0, [getThetaFromSinSquared(S_m[0][0])]
+            if c3:
+                if c4:
+                    # two solutions
+                    return 1, 1, [getThetaFromSinSquared(S_p[0][0]),getThetaFromSinSquared(S_m[0][0])]
+                else:
+                    return 1, 1,[getThetaFromSinSquared(S_p[0][0])]
+            else:
+                if c4:
+                    return 1, 0,[getThetaFromSinSquared(S_m[0][0])]
+                
+
+        c1 = checkRepetitionInBoth(S_p[0][0], S_p, S_m)
+        c2 = checkRepetitionInBoth(S_m[0][0], S_p, S_m)
+        c3 = checkRepetitionInOne(S_p)
+        c4 = checkRepetitionInOne(S_m)
+        # print(S_p)
+        # print(S_m)
+        # print(c1,c2,c3,c4)
+        
+        return interpret(c1,c2,c3,c4, S_p, S_m)
+
+    def getCosines(P, theta):
+        CosA = [P[0]/np.cos(theta), P[1]/np.cos(theta)] 
+        CosB = [P[2]/np.cos(theta), P[3]/np.cos(theta)]
+        return CosA, CosB
+    def verifyCosines(CosA, CosB):
+        for i,c in enumerate(CosA):
+            if np.abs(c) > 1+acc:
+                return 0
+            elif c > 1:
+                CosA[i] = 1
+            elif c <- 1:
+                CosA[i] = -1
+
+        for i,c in enumerate(CosB):
+            if np.abs(c) > 1+acc:
+                return 0
+            elif c > 1:
+                CosB[i] = 1
+            elif c <- 1:
+                CosB[i] = -1
+        return 1
+    def checkProductCondition(P, theta):
+        A,B,AB = createCorrelatorsAndMarginals(P)
+        R = 1
+        for x in range(2):
+            for y in range(2):
+                R *= ( np.cos(theta)**2*AB[x][y] - A[x]*B[y])
+        # print('R',R)
+        if R >= -acc:
+            return 1
+        else:
+            return 0
+    def getSines(P, CosA, CosB, theta):
+        _,_,AB = createCorrelatorsAndMarginals(P)
+        Sxy = np.zeros((2,2))
+        SinA = np.zeros(2)
+        SinB = np.zeros(2)
+
+        for x in range(2):
+            for y in range(2):
+                Sxy[x][y] = (AB[x][y] - CosA[x]*CosB[y])/np.sin(theta)
+                print(Sxy[x][y], f"sin a{x} sin b{y}")
+        # print(CosA[0], "blablaba")
+        if np.abs(np.abs(CosA[0])-1) < acc:  
+            print("Error- Special case, in computing sines. Please check manually")
+            SinA[0] = 0
+            SinA[1] = 0
+            SinB[0] = 0
+            SinB[1] = 0
+        else:
+            SinA[0] = np.sqrt(1 - CosA[0]**2)
+            SinB[0] = Sxy[0][0]/SinA[0]
+            SinB[1] = Sxy[0][1]/SinA[0]
+            if np.abs(Sxy[0][0]) < acc:
+                SinA[1] = Sxy[1][1]/Sxy[0][1]*SinA[0]    
+                print("Special case, in computing sines. Please check manually")
+            else:
+                SinA[1] = Sxy[1][0]/Sxy[0][0]*SinA[0]
+        return SinA, SinB
+        
+    def getAnglesFromTrig(SinA, SinB, CosA, CosB):
+        aAngles = np.zeros(2)
+        bAngles = np.zeros(2)
+        
+        for x in range(2):
+            aAngles[x] = np.arccos(CosA[x])
+            bAngles[x] = np.arccos(CosB[x])
+        for x in range(2):
+            if SinA[x] < 0:
+                aAngles[x] *= -1
+            if SinB[x] < 0:
+                bAngles[x] *= -1
+        for x in range(2):
+            if aAngles[x] < 0:
+                aAngles[x] = aAngles[x] + 2*np.pi
+            if bAngles[x] < 0:
+                bAngles[x] = bAngles[x] + 2*np.pi        
+
+        return aAngles[0], aAngles[1], bAngles[0], bAngles[1]
+    flag = 0
+    garbage = np.zeros(5)
+    if not checkIfProperRange(P):
+        print("wrong range of the point components")
+        return 0, garbage, 0
+    if not checkIfNonZeroMarginals(P):
+        print("Only for non-zero marginals")
+        return 1, garbage, 0
+
+    A,B,AB = createCorrelatorsAndMarginals(P)
+    K = findK(A,B,AB)
+    J = findJ(A,B,AB)
+    correct, S_p, S_m = findS(K,J)
+
+    if not correct:
+        print("delta < 0")
+        return 0, garbage, 0
+    correct, wholeSp, thetaTable = findSolutionInS(S_p, S_m)
+
+    if not correct:
+        print("no mutual solution")
+        return 0, garbage, 0
+    if len(thetaTable) == 2:
+        if np.abs(thetaTable[0]-thetaTable[1]) < acc:
+            a=0
+            # print("Sm = Sp, one mutual solution")
+        else:
+            print("Sm != Sp, two different solutions!")
+            # print(P, "punkt")
+            # print(thetaTable, "thety")
+            # print(S_p,'\n', S_m)
+            flag = 1 
+        theta = thetaTable[0]
+        #AAAAAAAAAAAAAAAAA zamiana thetaTable[0]
+        # temporarly take the first one
+    else:
+        theta = thetaTable[0]
+    if flag == 1:
+        CosA, CosB = getCosines(P, theta)
+        correct = verifyCosines(CosA, CosB)
+        
+        # print(np.sin(theta)**2, "sin^2theta")
+        if not correct:
+            print("wrong ranges of the obtained cosines")
+            return 0, garbage, 0
+        
+        correct = checkProductCondition(P, theta)
+        if not correct:
+            print("Product condition is not satisfied")
+            return 0, garbage, 0
+        
+        
+        SinA, SinB = getSines(P, CosA, CosB, theta)
+        # print(CosA,SinA, "cos, sin A")
+        # print(CosB,SinB, "cos, sin B")
+        a0, a1, b0, b1 = getAnglesFromTrig(SinA, SinB, CosA, CosB)
+        # print(np.cos(a0), np.cos(a1),np.sin(a0),np.sin(a1), "cos, sin A")
+        # print(np.cos(b0), np.cos(b1),np.sin(b0),np.sin(b1), "cos, sin B")
+        realisation = (theta,a0,a1,b0,b1)
+        return 1, realisation, wholeSp
+    else:
+        return 0, garbage, 0

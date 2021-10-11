@@ -635,7 +635,202 @@ def SpvsThreshold(N):
             c2 = 0
         if c1 != c2:
             print(c1,c2,"aaaaaa")
-N = 100000
+def nonnegativitySingularity(N):
+    for i in range(1):
+        a0 = 0
+        a1 = np.random.rand()*2*np.pi
+        b0 = 0
+        b1 = np.random.rand()*2*np.pi
+        
+        P = T.find_P(np.pi/2,a0, a1, b0, b1)
+        # print(P)
+        tlm = T.TLM(P)
+        # Sp, Sm = St.SPlusTemp(P)
+        # print(Sp)
+        # print(Sm)
+        # theta = np.random.rand()*np.pi/2
+        # thetaB = np.arcsin(T.hypoTreshold(a0,a1,b0,b1))
+        # print(thetaB)
+        thetaGr =  np.arcsin(T.hypoTresholdImproved(a0,a1,b0,b1))
+        
+        print(thetaGr)
+        Theta = np.linspace(0,np.pi/2,N)    
+        for theta in Theta:
+            # print(theta)
+            # if i%100 == 0:
+            #     print(i)
+            P = T.find_P(theta,a0, a1, b0, b1)
+            stlm = St.STLM(P,theta)
+
+            c1, thetan = St.SPlusCondition(P)
+            if theta >= thetaGr:
+                c2 = 1
+            else:
+                c2 = 0
+            # sat = St.satoshiTest(P)
+            # ex = T.is_exposed(theta,a0,a1,b0,b1, 0.001)
+            if c1 and (not stlm):
+                stlm2 = St.STLMComment(P, theta)
+            print(tlm, stlm, c1, c2)
+
+
+def moveHardy(N):
+    P = Pp.hardyPoint()
+    ok, realisation, wholeSp = T.twoQubitRepresentation(P)
+    print(ok, realisation, wholeSp)
+    print(realisation[2]-2*np.pi,realisation[3]-2*np.pi )
+    if not ok:
+        print("errorrr")
+    else:
+        theta, a0,a1,b0,b1 = realisation
+        print(np.cos(a0), np.cos(a1), np.cos(b0), np.cos(b1))
+        Sp, Sm = St.SPlusTemp(P)
+        print(Sp)
+        print(Sm)
+        # Theta = np.linspace(theta, np.pi/2, N)
+        # for th in Theta:
+        #     P = T.find_P(th,a0, a1, b0, b1)
+        #     Sp, Sm = St.SPlusTemp(P)
+        #     print(Sp)
+        #     print(Sm)
+        #     print("\n")
+
+def decompositionTest(N):
+    for i in range(N):
+        P = np.random.rand(8)*2-1
+        Deter = T.find_deterministic_points()
+        # for d in Deter:
+        #     print(d)
+        alpha, min, status = T.decomposeP(P, Deter)
+        if status == 0:
+            print(P, "point")
+            print(alpha, min, "alpha, min\n")
+def decomposition(N):
+    Deter = T.find_deterministic_points()
+    a0 = 0#np.random.rand()*np.pi 
+    b0 = 0#np.random.rand()*np.pi
+    a1 = np.random.rand()*np.pi
+    b1 = np.random.rand()*np.pi
+    Theta = np.linspace(0,np.pi/2,N)
+    theta_b = np.arcsin(T.hypoTresholdImproved(a0,a1,b0,b1))
+    P_b =  T.find_P(theta_b, a0,a1,b0,b1)
+    decomposers = np.r_[Deter, [P_b]]
+    
+    for theta in Theta:
+        # theta = np.random.rand()*np.pi/2
+        P = T.find_P(theta, a0,a1,b0,b1)
+        # print(decomposers)
+        alpha, min, status = T.decomposeP(P, decomposers)
+        if status == 0:
+            nonl = T.is_nonlocalPoint(P)
+            print(theta)
+            print(nonl)
+            # print(P, "point")
+            # print(alpha, min, "alpha, min\n")
+        else:
+            print('xd')
+    print(theta_b)
+def notUniquePoint():
+    # P = [0.4445537842667646, 0.24544802147218514, 0.734354006208671, 0.734354006208671, 0.542908951128687, 0.542908951128687, 0.3966948365612542, 0.3966948365612542]
+    P5 = [0.024973, 0.058992, 0.5,      0.5,      0.07546,  0.07546,  0.092469, 0.092469]
+    P4 = [0.25, 0.125, -0.262176, -0.0930301, -0.731555, -0.689269, -0.698783, 0.654382]
+    P2 = [0.5, 0.5, -np.sqrt(2/5),0,-np.sqrt(5/2)/2, -np.sqrt(5/2)/2 + 1/ np.sqrt(10), -np.sqrt(5/2)/2, np.sqrt(5/2)/2 - 1/ np.sqrt(10)]
+    P3 = [1/4, 1/2, -np.sqrt(7/3)/3, 1/np.sqrt(21), -37/(12*np.sqrt(21)), -37/(12*np.sqrt(21)) + 1/4*(np.sqrt(7/3)/3+1/np.sqrt(21)), -np.sqrt(7/3)/12-37/(12*np.sqrt(21)), -np.sqrt(7/3)/12+43/(12*np.sqrt(21))]
+    b = np.random.rand()
+    a1 = np.random.rand()
+    a0 = np.random.rand()
+    b= 0.5
+    a0 = 0.25 
+    a1 = 0.5
+    A0B0 = (a0 + a1 + a0*b**2 - a1*b**2)/(2*b)
+    A0B1 = A0B0
+    A1B0 = A0B0 - b*(a0 - a1)
+    A1B1 = A0B0 - b*(a0 - a1)
+    P = [a0, a1, b, b, A0B0, A0B1, A1B0, A1B1]
+    # if A0B0 < 1:
+    print(P, "punkt")
+    correct, realisation, wholeSp = T.twoQubitRepresentation(P)
+    theta, a0, a1, b0, b1 = realisation
+    # print(correct, theta, a0/np.pi, a1/np.pi, b0/np.pi, b1/np.pi, wholeSp, np.sin(theta)**2, "tu")
+    # print(P[0]/np.cos(theta), P[1]/np.cos(theta), P[2]/np.cos(theta), P[3]/np.cos(theta), "cosinusy prawdziwe")
+    print(St.STLM(P, theta), "stlm")
+    Ptlm = T.find_P(np.pi/2, a0,a1,b0,b1)
+    
+    print(T.find_P(theta, a0,a1,b0,b1), "Punkt zwrotny")
+
+    print(T.TLM(Ptlm), "Tlm")
+    print(T.is_exposed(theta, a0,a1,b0,b1,0.001), "exposed")
+
+def tangentToCriticalPoint(N):
+    a0 = 0 
+    b0 = 0
+    a1 = np.random.rand()*np.pi
+    b1 = np.random.rand()*np.pi
+    theta_b = np.arcsin(T.hypoTresholdImproved(a0,a1,b0,b1))
+
+    def pointOnTangent(g):
+        P0 = np.array([0, 0, 0, 0, 1, np.cos(b1), np.cos(a1), np.cos(a1)*np.cos(b1)])
+        Pm = np.array([1, np.cos(a1), 1, np.cos(b1), 0, 0, 0, 0])
+        Pc = np.array([0, 0, 0, 0, 0, 0, 0, np.sin(a1)*np.sin(b1)])
+        return P0 + Pm*(np.cos(theta_b) - g*np.sin(theta_b)) + Pc*(np.sin(theta_b) + g*np.cos(theta_b))
+
+    P_b =  T.find_P(theta_b, a0,a1,b0,b1)
+    nonNeg = T.isOnNonNegativityFacet(P_b)
+    BrokenNonNeg = T.BeyondNonNegativityFacet(P_b)
+    nonLoc = T.is_nonlocalPoint(P_b)
+    print(nonNeg, BrokenNonNeg, nonLoc,"\n")
+    
+    G = np.linspace(-1,0,N)
+    for g in G:
+        print(g)
+        P = pointOnTangent(g)
+        print(P)
+        nonNeg = T.isOnNonNegativityFacet(P)
+        BrokenNonNeg = T.BeyondNonNegativityFacet(P)
+        nonLoc = T.is_nonlocalPoint(P)
+        print(nonNeg, BrokenNonNeg, nonLoc,"\n")
+    acc = 1e-6
+    l = -1
+    p = 0
+    while p-l > acc:
+        s = (l+p)/2
+        P = pointOnTangent(s)
+        BrokenNonNeg = T.BeyondNonNegativityFacet(P)
+        if BrokenNonNeg:
+            l = s
+        else:
+            p = s
+    s = (l+p)/2
+    print("\n\n",p)
+    print((np.cos(theta_b)-1)/np.sin(theta_b))
+    P_g = pointOnTangent(p)
+    print(P_g)
+    nonNeg = T.isOnNonNegativityFacet(P_g)
+    BrokenNonNeg = T.BeyondNonNegativityFacet(P_g)
+    nonLoc = T.is_nonlocalPoint(P_g)
+    print(nonNeg, BrokenNonNeg, nonLoc,"\n")
+
+def notUniquePointsInvestigating(N):
+    for i in range(N):
+        P = np.round(T.notUniquePoints(),6)
+        correct, realisation, wholeSp = T.twoQubitRepresentationSpecial(P)
+        if correct:
+            print(P, "point")
+
+            theta, a0, a1, b0, b1 = realisation
+            # print(correct, theta, a0/np.pi, a1/np.pi, b0/np.pi, b1/np.pi, wholeSp, np.sin(theta)**2, "tu")
+            # print(P[0]/np.cos(theta), P[1]/np.cos(theta), P[2]/np.cos(theta), P[3]/np.cos(theta), "cosinusy prawdziwe")
+            print(St.STLM(P, theta), "stlm")
+            Ptlm = T.find_P(np.pi/2, a0,a1,b0,b1)
+
+            print(T.find_P(theta, a0,a1,b0,b1), "Punkt zwrotny")
+            print(T.is_nonlocalPoint(P), "is nonlocal?")
+            print(T.TLM(Ptlm), "Tlm")
+            print(T.is_exposed(theta, a0,a1,b0,b1,0.001), "exposed")
+
+            
+
+N = 200
 D = 101
 
 # compareSatoshiAndNumeric(N)
@@ -667,4 +862,11 @@ D = 101
 # zeroProbability(N)
 # tlmVSstlm(N)
 # SpSmTheta(N)
-SpvsThreshold(N)
+# SpvsThreshold(N)
+nonnegativitySingularity(N)
+# moveHardy(N)
+# decompositionTest(N)
+# decomposition(N)
+# notUniquePoint()
+# tangentToCriticalPoint(N)
+# notUniquePointsInvestigating(N)
